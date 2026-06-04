@@ -1,1057 +1,622 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TAMBUKA // IDENTITYGUARD ENGINE</title>
-    <style>
-        :root {
-            --matrix-bg: #030712;
-            --cyber-panel: #0b1329;
-            --neon-cyan: #00f2fe;
-            --laser-blue: #4facfe;
-            --neon-green: #39ff14;
-            --warning-amber: #ffaa00;
-            --alert-red: #ff3333;
-            --text-bright: #e2e8f0;
-            --text-dark: #94a3b8;
-            --glitch-border: rgba(0, 242, 254, 0.2);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IdentityGuard Engine v2.0 (Multi-Tenant Cloud) - Tambuka Technologies</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+  <style>
+    :root {
+      --bg-dark: #070b12;
+      --panel-bg: #0d1527;
+      --border-color: #1e2d4a;
+      --accent-cyan: #00f0ff;
+      --accent-blue: #0077ff;
+      --text-main: #e2e8f0;
+      --text-muted: #64748b;
+      --status-pass: #10b981;
+      --status-fail: #ef4444;
+      --status-warn: #f59e0b;
+    }
 
-        body {
-            background-color: var(--matrix-bg);
-            color: var(--text-bright);
-            padding: 15px;
-            overflow-x: hidden;
-            background-image: 
-                linear-gradient(rgba(0, 242, 254, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 242, 254, 0.02) 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; }
+    header { background: linear-gradient(135deg, #09111e, #11213c); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    h1 { color: var(--accent-cyan); margin: 0; font-size: 1.6rem; letter-spacing: 1px; }
+    .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+    
+    .nav-tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+    .tab-btn { background: #111a2e; border: 1px solid var(--border-color); color: var(--text-muted); padding: 10px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; white-space: nowrap; flex: 1; text-align: center; }
+    .tab-btn.active { background: var(--accent-blue); color: #white; border-color: var(--accent-cyan); color: #fff; }
+    
+    .tab-content { display: none; background: var(--panel-bg); border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); }
+    .tab-content.active { display: block; }
+    
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.8rem; color: var(--accent-cyan); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+    input, select { width: 100%; background: #070b12; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 4px; font-size: 0.9rem; }
+    input:focus, select:focus { border-color: var(--accent-cyan); outline: none; }
+    
+    .radio-group { display: flex; gap: 15px; padding: 8px 0; }
+    .radio-label { display: flex; align-items: center; gap: 6px; color: #fff; font-size: 0.9rem; cursor: pointer; text-transform: none; }
+    .radio-label input { width: auto; cursor: pointer; }
 
-        .cyber-wrapper {
-            max-width: 1300px;
-            margin: 0 auto;
-        }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button.btn-primary { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); color: #fff; border: none; padding: 12px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; text-transform: uppercase; font-size: 0.85rem; margin-top: 10px; box-shadow: 0 4px 10px rgba(0,119,255,0.3); }
+    
+    .hud-panel { background: #070b12; border: 1px solid #1a263d; border-radius: 6px; padding: 12px; margin-top: 15px; }
+    .hud-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #1a263d; padding-bottom: 4px; }
+    .hud-value { font-size: 1.1rem; font-weight: bold; color: var(--status-pass); font-family: monospace; }
+    .hud-value.flagged { color: var(--status-fail); }
 
-        /* Top High-Tech Command Header */
-        header {
-            background: linear-gradient(90deg, #0b1329 0%, #1c2541 100%);
-            border: 2px solid var(--neon-cyan);
-            border-bottom: 5px solid var(--laser-blue);
-            padding: 15px 25px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            position: relative;
-            box-shadow: 0 0 25px rgba(0, 242, 254, 0.15);
-        }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+    th { background: #070b12; color: var(--accent-cyan); padding: 10px; border-bottom: 2px solid var(--border-color); }
+    td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+    
+    .badge { padding: 3px 6px; border-radius: 3px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+    .badge-pass { background: rgba(16,185,129,0.2); color: var(--status-pass); border: 1px solid var(--status-pass); }
+    .badge-fail { background: rgba(239,68,68,0.2); color: var(--status-fail); border: 1px solid var(--status-fail); }
+    .badge-pending { background: rgba(245,158,11,0.2); color: var(--status-warn); border: 1px solid var(--status-warn); }
+    .badge-gender-m { background: rgba(0,119,255,0.2); color: #38bdf8; border: 1px solid #38bdf8; }
+    .badge-gender-f { background: rgba(236,72,153,0.2); color: #f472b6; border: 1px solid #f472b6; }
 
-        header::before {
-            content: "SECURE NODE ENTRY // ARCH: v2.6";
-            position: absolute;
-            top: -10px;
-            left: 20px;
-            background: var(--matrix-bg);
-            padding: 0 10px;
-            font-size: 0.75rem;
-            color: var(--neon-cyan);
-            letter-spacing: 1px;
-            font-weight: bold;
-        }
+    .sensor-box { background: #05080f; border: 2px dashed var(--border-color); border-radius: 8px; padding: 30px 15px; text-align: center; cursor: pointer; margin: 15px 0; transition: all 0.3s ease; }
+    .sensor-box.scanning { border-color: var(--accent-cyan); background: rgba(0,240,255,0.05); animation: pulse 1.5s infinite; }
+    .sensor-box.passed { border-color: var(--status-pass); background: rgba(16,185,129,0.05); }
+    .sensor-box.failed { border-color: var(--status-fail); background: rgba(239,68,68,0.05); }
+    
+    .terminal-log { background: #04060a; border: 1px solid #111a2e; border-radius: 4px; padding: 10px; font-family: monospace; font-size: 0.75rem; height: 100px; overflow-y: auto; color: #34d399; text-align: left; }
+    .connection-banner { background: #0b1a30; border: 1px solid #00f0ff; padding: 8px; border-radius: 4px; font-size: 0.8rem; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; font-family: monospace; }
 
-        .header-grid {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        h1 {
-            font-weight: 800;
-            font-size: 1.8rem;
-            letter-spacing: 1px;
-            background: linear-gradient(45deg, #fff 30%, var(--neon-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-transform: uppercase;
-        }
-
-        /* Tactical Navigation Matrix */
-        .tactical-tabs {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .tab-trigger {
-            background: #111c44;
-            border: 1px solid var(--glitch-border);
-            color: var(--text-dark);
-            padding: 14px 5px;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            font-weight: bold;
-            cursor: pointer;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-            text-align: center;
-        }
-
-        .tab-trigger:hover {
-            color: var(--neon-cyan);
-            border-color: var(--neon-cyan);
-            background: rgba(0, 242, 254, 0.05);
-        }
-
-        .tab-trigger.active-node {
-            color: var(--matrix-bg);
-            background: var(--neon-cyan);
-            font-weight: bold;
-            border: 1px solid #fff;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
-        }
-
-        /* Core Command Modules panels */
-        .command-module {
-            display: none;
-            background: var(--cyber-panel);
-            border: 1px solid #1e293b;
-            padding: 25px;
-            border-radius: 4px;
-            position: relative;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
-        }
-
-        .command-module.module-active {
-            display: block;
-            border-left: 4px solid var(--neon-cyan);
-        }
-
-        /* Section Indicators */
-        .module-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            letter-spacing: 1px;
-            color: #fff;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 1px dashed var(--text-dark);
-            padding-bottom: 10px;
-        }
-
-        .module-title::before {
-            content: "■";
-            color: var(--neon-cyan);
-        }
-
-        /* Input Crypt Array Forms */
-        .form-grid-layout {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 25px;
-        }
-
-        @media (max-width: 768px) {
-            .form-grid-layout { grid-template-columns: 1fr; }
-            .tactical-tabs { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        .input-block {
-            margin-bottom: 18px;
-        }
-
-        .input-block label {
-            display: block;
-            font-size: 0.8rem;
-            color: var(--text-dark);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
-
-        .cyber-input {
-            width: 100%;
-            padding: 12px;
-            background: #060b19;
-            border: 1px solid #1e2942;
-            color: var(--neon-cyan);
-            border-radius: 2px;
-            font-size: 0.95rem;
-            transition: all 0.3s;
-        }
-
-        .cyber-input:focus {
-            outline: none;
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
-            background: #091126;
-        }
-
-        /* Match Matrix Configuration */
-        .matrix-box-subpanel {
-            background: #060b19;
-            border: 1px solid #192547;
-            padding: 15px;
-            margin: 20px 0;
-            position: relative;
-        }
-
-        .matrix-box-subpanel::after {
-            content: "LINEUP LOCK SYSTEM";
-            position: absolute;
-            bottom: -8px;
-            right: 15px;
-            background: var(--cyber-panel);
-            padding: 0 5px;
-            font-size: 0.65rem;
-            color: var(--text-dark);
-            font-weight: bold;
-        }
-
-        .lineup-quad-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-top: 8px;
-        }
-
-        .quad-slot {
-            background: var(--cyber-panel);
-            border: 1px solid #1e2942;
-            padding: 10px;
-            text-align: center;
-        }
-
-        .quad-slot span {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--laser-blue);
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .quad-slot select {
-            width: 100%;
-            background: #030712;
-            border: 1px solid #1e2942;
-            color: #fff;
-            padding: 4px;
-            font-size: 0.75rem;
-        }
-
-        /* Biometric Hardware Interface UI Component */
-        .hardware-peripheral-deck {
-            background: #050a14;
-            border: 1px dashed var(--laser-blue);
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 15px;
-            border-radius: 2px;
-        }
-
-        /* Action Arrays Buttons */
-        .fire-action-btn {
-            background: linear-gradient(135deg, var(--laser-blue) 0%, var(--neon-cyan) 100%);
-            border: none;
-            color: #030712;
-            font-weight: 800;
-            font-size: 0.9rem;
-            padding: 14px 25px;
-            text-transform: uppercase;
-            cursor: pointer;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .fire-action-btn:hover {
-            box-shadow: 0 0 25px rgba(0, 242, 254, 0.5);
-            transform: translateY(-1px);
-        }
-
-        /* HUD Live Analytics Display (Right Side Column) */
-        .hud-telemetry-panel {
-            background: #050a14;
-            border: 1px solid #1e2942;
-            padding: 20px;
-            text-align: center;
-            border-top: 3px solid var(--warning-amber);
-        }
-
-        .hud-avatar-frame {
-            width: 120px;
-            height: 120px;
-            background: #0b1329;
-            border: 2px solid var(--text-dark);
-            margin: 0 auto 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hud-avatar-frame img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .scan-overlay-line {
-            width: 100%;
-            height: 2px;
-            background: var(--neon-cyan);
-            position: absolute;
-            top: 0;
-            left: 0;
-            animation: radarSweep 2s infinite linear;
-            box-shadow: 0 0 8px var(--neon-cyan);
-        }
-
-        @keyframes radarSweep {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-        }
-
-        /* Status Tags Indicators */
-        .cyber-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            border-radius: 1px;
-        }
-
-        .badge-pending { background: rgba(255, 170, 0, 0.1); color: var(--warning-amber); border: 1px solid var(--warning-amber); }
-        .badge-passed { background: rgba(57, 255, 20, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); }
-        .badge-failed { background: rgba(255, 51, 51, 0.1); color: var(--alert-red); border: 1px solid var(--alert-red); }
-
-        /* Local Ledger Array Grid */
-        .ledger-matrix-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .grid-data-node {
-            background: #060b19;
-            border: 1px solid #1e2942;
-            padding: 15px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            position: relative;
-        }
-
-        .grid-data-node:hover {
-            border-color: var(--neon-cyan);
-        }
-
-        /* Field Processing Scanner Console Modules */
-        .dual-terminal-layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .dual-terminal-layout { grid-template-columns: 1fr; }
-        }
-
-        .matrix-terminal-box {
-            background: #02040a;
-            border: 1px solid #151f32;
-            padding: 15px;
-            color: #38bdf8;
-            height: 230px;
-            overflow-y: auto;
-            border-left: 2px solid var(--laser-blue);
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-
-        .biometric-sensor-pad {
-            border: 2px dashed #1e2942;
-            background: #040812;
-            padding: 35px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .biometric-sensor-pad:hover {
-            border-color: var(--neon-cyan);
-            background: rgba(0, 242, 254, 0.02);
-        }
-
-        .fingerprint-glyph-icon {
-            font-size: 3.5rem;
-            margin-bottom: 10px;
-            user-select: none;
-            color: var(--text-dark);
-        }
-
-        @keyframes scanPulse {
-            0% { transform: scale(1); opacity: 1; color: var(--laser-blue); }
-            50% { transform: scale(1.08); opacity: 0.5; color: var(--neon-cyan); }
-            100% { transform: scale(1); opacity: 1; color: var(--laser-blue); }
-        }
-
-        .active-scanning-pulse {
-            animation: scanPulse 1s infinite linear;
-        }
-
-        /* Master Database Matrix Spreadsheet Table Layout */
-        .scroller-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            margin-top: 15px;
-            border: 1px solid #1e2942;
-        }
-
-        .tactical-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.85rem;
-        }
-
-        .tactical-table th {
-            background: #0e172c;
-            color: var(--neon-cyan);
-            padding: 12px 15px;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-            border-bottom: 2px solid #1e2942;
-            text-transform: uppercase;
-        }
-
-        .tactical-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #0f172a;
-            background: #050a14;
-        }
-
-        .tactical-table tr:hover td {
-            background: #091224;
-        }
-
-        /* Gateway Cover Panel */
-        .auth-gate-box {
-            text-align: center;
-            max-width: 450px;
-            margin: 60px auto;
-            background: var(--cyber-panel);
-            border: 2px solid var(--warning-amber);
-            padding: 40px 30px;
-            box-shadow: 0 0 30px rgba(255, 170, 0, 0.1);
-        }
-    </style>
+    @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+  </style>
 </head>
 <body>
 
-    <div class="cyber-wrapper">
-        
-        <!-- HEADER BLOCK -->
-        <header>
-            <div class="header-grid">
-                <div>
-                    <h1>Tambuka IdentityGuard Engine</h1>
-                    <p style="color: var(--text-dark); font-size: 0.85rem; letter-spacing: 1px; font-weight: 500;">METRIC AGE DEVIATION SCANNER & BIOMETRIC AUTHENTICATION LEDGER</p>
-                </div>
-                <div id="activeDomainTag" style="font-size: 0.9rem; color: var(--warning-amber); background: #050a14; padding: 6px 12px; border: 1px solid #1e2942; font-weight: bold;">
-                    🔒 NODE LINK: OFFLINE
-                </div>
-            </div>
-        </header>
+  <header>
+    <h1>IDENTITYGUARD CENTRAL ENGINE</h1>
+    <div class="subtitle">Tambuka Technologies • Live Multi-School Cloud Sports Matrix</div>
+  </header>
 
-        <!-- SECURITY PORTAL CONTAINER -->
-        <div id="gatekeeperPanel" class="auth-gate-box">
-            <h2 style="color:var(--warning-amber); font-size:1.2rem; letter-spacing:1px; margin-bottom:10px; text-transform: uppercase;">🔴 Isolated Tenant Authentication</h2>
-            <p style="color:var(--text-dark); font-size:0.85rem; margin-bottom:20px; line-height: 1.4;">Feed assigned administrative security string tokens into verification processing rows to decouple localized operational files.</p>
-            <input type="password" id="passkeyInputToken" class="cyber-input" placeholder="ENTER ISOLATION ACCESS KEY" style="text-align:center; letter-spacing:4px; margin-bottom:15px;">
-            <button class="fire-action-btn" style="background:var(--warning-amber);" onclick="initializeHandshakeSync()">Decrypt Domain Array</button>
-            <p style="font-size:0.8rem; color:var(--text-dark); margin-top:15px;">Developer Test Allocation Seeds: <strong style="color: #fff;">RUKIGA_POOL_26</strong> or <strong style="color: #fff;">KAMPALA_HUB_26</strong></p>
-        </div>
+  <div class="connection-banner">
+    <div>📡 NETWORK NODE: <span style="color:var(--accent-cyan); font-weight:bold;">LIVE UNIFIED MATRIX DB</span></div>
+    <div>STATUS: <span id="syncIndicator" style="color:var(--status-pass); font-weight:bold;">● STANDBY READY</span></div>
+  </div>
 
-        <!-- MAIN TERMINAL HUB INTERFACE MATRIX -->
-        <div id="mainDashboardCore" style="display: none;">
-            
-            <!-- MASTER NAVIGATION ARCHITECTURE -->
-            <div class="tactical-tabs">
-                <button class="tab-trigger active-node" onclick="switchModuleView('enrollmentModule', this)">[01] Ingestion Form</button>
-                <button class="tab-trigger" onclick="switchModuleView('localLedgerModule', this)">[02] District Ledger</button>
-                <button class="tab-trigger" onclick="switchModuleView('fieldScannerModule', this)">[03] Field Terminal</button>
-                <button class="tab-trigger" onclick="switchModuleView('globalOversightModule', this)">[04] Global Matrix</button>
-            </div>
+  <nav class="nav-tabs">
+    <div class="tab-btn active" onclick="switchTab('ingestion')">[01] Ingestion Form</div>
+    <div class="tab-btn" onclick="switchTab('ledger')">[02] Live Local Ledger</div>
+    <div class="tab-btn" onclick="switchTab('terminal')">[03] Field Terminal</div>
+    <div class="tab-btn" onclick="switchTab('global')">[04] Consolidated Cloud Matrix</div>
+  </nav>
 
-            <!-- MODULE 1: PROFILE INGESTION FORM -->
-            <div id="enrollmentModule" class="command-module module-active">
-                <div class="module-title">Athlete Ingestion Profile Registration Port</div>
-                
-                <div class="form-grid-layout">
-                    <form id="ingestionFormGroup" onsubmit="event.preventDefault(); commitProfileNode();">
-                        <div class="input-block">
-                            <label>Full Legal Name (Match Verified Docs):</label>
-                            <input type="text" id="formName" class="cyber-input" placeholder="e.g. AMANYA DEREK" required oninput="document.getElementById('hudNameMirror').textContent = this.value.toUpperCase() || 'AWAITING SEED';">
-                        </div>
-
-                        <!-- DUAL ROW: INSTITUTION & ORIGIN DISTRICT -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="input-block">
-                                <label>Educational Institution / Source School:</label>
-                                <input type="text" id="formSchool" class="cyber-input" placeholder="Enter registration institution" required>
-                            </div>
-                            <div class="input-block">
-                                <label>Representing District:</label>
-                                <input type="text" id="formDistrict" class="cyber-input" placeholder="e.g. Rukiga, Kampala, Ntungamo" required>
-                            </div>
-                        </div>
-
-                        <!-- Match Grid Parameters Selection Arrays -->
-                        <div class="matrix-box-subpanel">
-                            <label style="color: var(--neon-cyan); font-size: 0.8rem; font-weight: bold; display: block; letter-spacing: 1px;">⚡ FIELD TOURNAMENT STREAM LINEUP DESIGNATION MATRIX</label>
-                            <div class="lineup-quad-grid">
-                                <div class="quad-slot">
-                                    <span>Match 1</span>
-                                    <select id="m1" required><option value="Starter">Starter</option><option value="Substitute">Sub</option></select>
-                                </div>
-                                <div class="quad-slot">
-                                    <span>Match 2</span>
-                                    <select id="m2" required><option value="Starter">Starter</option><option value="Substitute">Sub</option></select>
-                                </div>
-                                <div class="quad-slot">
-                                    <span>Match 3</span>
-                                    <select id="m3" required><option value="Starter">Starter</option><option value="Substitute">Sub</option></select>
-                                </div>
-                                <div class="quad-slot">
-                                    <span>Match 4</span>
-                                    <select id="m4" required><option value="Starter">Starter</option><option value="Substitute">Sub</option></select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="input-block">
-                                <label>Temporal Profile DOB:</label>
-                                <input type="date" id="formDOB" class="cyber-input" required onchange="handleDynamicAgeCalculation()">
-                            </div>
-                            <div class="input-block">
-                                <label>Assigned Tournament Division:</label>
-                                <select id="formDivision" class="cyber-input" required onchange="handleDynamicAgeCalculation()">
-                                    <option value="Under-15">Under-15 Division Group</option>
-                                    <option value="Under-17">Under-17 Division Group</option>
-                                    <option value="Under-19">Under-19 Division Group</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div class="input-block">
-                                <label>Competition Ranking Tier:</label>
-                                <select id="formTier" class="cyber-input">
-                                    <option value="Tier-1 (Elite)">Tier-1 (Elite National Stream)</option>
-                                    <option value="Tier-2 (Regional)">Tier-2 (Tier-2 District Stream)</option>
-                                </select>
-                            </div>
-                            <div class="input-block">
-                                <label>Registry Identity Face Photo:</label>
-                                <input type="file" id="formFile" class="cyber-input" accept="image/*" onchange="extractDataURLBuffer(this)">
-                            </div>
-                        </div>
-
-                        <!-- Embedded Peripheral Simulation Unit Box -->
-                        <div class="hardware-peripheral-deck">
-                            <div>
-                                <span id="hardwareLedStatus" style="color:var(--alert-red); margin-right:5px;">●</span>
-                                <span style="font-size:0.85rem; color:var(--text-bright); text-transform:uppercase; font-weight: bold;">Biometric Registration Pad:</span>
-                                <div id="hardwareHashValue" style="font-size:0.75rem; color:var(--text-dark); margin-top:2px;">Awaiting capture key trigger...</div>
-                            </div>
-                            <button type="button" class="fire-action-btn" style="padding:6px 12px; font-size:0.75rem; width:auto;" onclick="captureMasterRegistrationPrint()">Scan Master Print</button>
-                        </div>
-
-                        <button type="submit" class="fire-action-btn" style="margin-top: 20px;">Commit Profile Block to Local Nodes</button>
-                    </form>
-
-                    <!-- LIVE COUNTERPART TELEMETRY DISPLAY PANEL (HUD) -->
-                    <div class="hud-telemetry-panel">
-                        <div style="font-size:0.75rem; color:var(--text-dark); letter-spacing:1px; margin-bottom:15px; text-transform:uppercase; font-weight: bold;">// CRYPTOGRAPHIC TELEMETRY SCAN MIRROR</div>
-                        <div class="hud-avatar-frame" id="hudImageContainer">
-                            <span>👤</span>
-                            <div class="scan-overlay-line"></div>
-                        </div>
-                        <h3 id="hudNameMirror" style="color:#fff; font-size:1.1rem; letter-spacing:1px; margin-bottom:5px; font-weight: bold;">AWAITING SEED</h3>
-                        <div id="hudDivisionTag" class="cyber-badge badge-pending" style="margin-bottom:20px;">U15 MATRICES</div>
-                        
-                        <div style="text-align:left; background:#02040a; padding:12px; border-left:2px solid var(--warning-amber); font-size:0.75rem; line-height: 1.4;">
-                            <span style="color:var(--neon-cyan); font-weight: bold;">DATA HASH SIGNATURE:</span><br>
-                            <span id="hudHashDisplay" style="color:var(--text-dark); word-break:break-all;">EMPTY_STREAM_BUFFER</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODULE 2: DISTRICT DATABASE RECORDS LEDGER -->
-            <div id="localLedgerModule" class="command-module">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom:20px; border-bottom:1px dashed var(--text-dark); padding-bottom:15px;">
-                    <div class="module-title" style="margin-bottom:0; border:none; padding:0;">District Network Local Isolated Storage</div>
-                    <button class="fire-action-btn" style="width:auto; padding:8px 20px; background:linear-gradient(135deg, var(--neon-green), #10b981);" onclick="uplinkLocalNodesToCentralDatabase()">Sync Edge Data Packet to Central Core</button>
-                </div>
-                <div class="ledger-matrix-grid" id="districtRosterOutputGrid">
-                    <!-- Cards populate dynamically -->
-                </div>
-            </div>
-
-            <!-- MODULE 3: TOURNAMENT PITCH-SIDE SCANNER TERMINAL -->
-            <div id="fieldScannerModule" class="command-module">
-                <div class="module-title">Pitch-Side Biometric Screening Terminal Matrix</div>
-                
-                <div style="background:#060b19; padding:15px; border:1px solid #1e2942; margin-bottom:20px;">
-                    <label style="display:block; font-size:0.75rem; color:var(--text-dark); text-transform:uppercase; margin-bottom:6px; font-weight: bold;">Select Local Registered Target to Load into Memory Arrays:</label>
-                    <select id="fieldTargetSelect" class="cyber-input" onchange="loadTargetIntoTerminalConsole()">
-                        <!-- Dropdown targets inject programmatically -->
-                    </select>
-                </div>
-
-                <div class="dual-terminal-layout">
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-dark); text-transform:uppercase; margin-bottom:6px; font-weight: bold;">Console Live Evaluation Diagnostic Streams:</div>
-                        <div class="matrix-terminal-box" id="terminalLiveLog">
-                            Awaiting verification hardware selection framework. Terminal core idling...
-                        </div>
-                        <div style="display:flex; gap:10px; margin-top:15px;">
-                            <button class="fire-action-btn" style="background:var(--alert-red); color:#fff;" onclick="overrideFieldScreeningVerdict('FLAGGED')">🚨 Manual Flag Reject</button>
-                            <button class="fire-action-btn" style="background:var(--neon-green); color:#030712;" onclick="overrideFieldScreeningVerdict('VERIFIED')">✅ Core Pass Authenticate</button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--text-dark); text-transform:uppercase; margin-bottom:6px; font-weight: bold;">Live Core Biometric Identity Stream:</div>
-                        <div class="biometric-sensor-pad" onclick="fireFieldHardwareMatchCheckSequence()">
-                            <div class="fingerprint-glyph-icon" id="fieldScannerGraphic">🧬</div>
-                            <div id="fieldScannerLabel" style="font-size:0.85rem; font-weight:bold; color:#fff;">TERMINAL SENSOR DISCONNECTED</div>
-                            <p style="font-size:0.8rem; color:var(--text-dark); margin-top:5px; max-width:280px; line-height:1.4;">Tap target panel area to initiate dynamic digital authentication scan matrices.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODULE 4: GLOBAL SUPERVISOR OVERSIGHT DATA GRID -->
-            <div id="globalOversightModule" class="command-module">
-                <div class="module-title">Supreme High Federation Unified Global Oversight Broad Feed</div>
-                
-                <div class="scroller-wrapper">
-                    <table class="tactical-table">
-                        <thead>
-                            <tr>
-                                <th>Candidate Target Node</th>
-                                <th>Source Educational Hub</th>
-                                <th>Origin District</th>
-                                <th>Allocated Network Domain</th>
-                                <th>Telemetry Age Validation</th>
-                                <th>Core Identity Verification Pass Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="globalFederationTableRows">
-                            <!-- Global records stream here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
+  <div id="ingestion" class="tab-content active">
+    <div class="form-group">
+      <label>Athlete Legal Name</label>
+      <input type="text" id="athleteName" placeholder="e.g. Mukasa Ronald" oninput="updateIngestionHUD()">
+    </div>
+    
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Originating District</label>
+        <input type="text" id="athleteDistrict" placeholder="e.g. Kampala" oninput="updateIngestionHUD()">
+      </div>
+      <div class="form-group">
+        <label>Representing Institution / School</label>
+        <input type="text" id="athleteSchool" placeholder="e.g. Makerere College" oninput="updateIngestionHUD()">
+      </div>
     </div>
 
-    <!-- AUDIO HARDWARE PIPELINE INJECTIONS -->
-    <audio id="successAlarmSound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
-    <audio id="dangerAlarmSound" src="https://assets.mixkit.co/active_storage/sfx/2959/2959-84.wav" preload="auto"></audio>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Date of Birth</label>
+        <input type="date" id="athleteDOB" onchange="updateIngestionHUD()">
+      </div>
+      <div class="form-group">
+        <label>Division Assignment Tier</label>
+        <select id="athleteDivision" onchange="updateIngestionHUD()">
+          <option value="U15">Under-15 Division</option>
+          <option value="U17">Under-17 Division</option>
+          <option value="U19" selected>Under-19 Division</option>
+        </select>
+      </div>
+    </div>
 
-    <!-- SCRIPT INFRASTRUCTURE INJECTIONS -->
-    <script>
-        const DOMAIN_TENANT_SCHEMAS = {
-            "RUKIGA_POOL_26": "Rukiga District Pool Network",
-            "KAMPALA_HUB_26": "Kampala Central Core Node"
-        };
+    <div class="form-group">
+      <label>Biological Gender Group</label>
+      <div class="radio-group">
+        <label class="radio-label">
+          <input type="radio" name="athleteGender" value="Male" checked onchange="updateIngestionHUD()"> Male (Boys)
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="athleteGender" value="Female" onchange="updateIngestionHUD()"> Female (Girls)
+        </label>
+      </div>
+    </div>
 
-        const DIVISION_LIMITS = { "Under-15": 15, "Under-17": 17, "Under-19": 19 };
+    <div class="form-group">
+      <label>Field Lineup Designation</label>
+      <select id="athleteLineup">
+        <option value="Starter">Starting Lineup Core</option>
+        <option value="Substitute">Tactical Bench Substitute</option>
+      </select>
+    </div>
 
-        let activeWorkspaceContext = null;
-        let runningImageStream64 = "👤";
-        let activeFileHashSignature = "EMPTY_STREAM_BUFFER";
-        let storedRosterFingerprint = "";
+    <div class="hud-panel">
+      <div class="hud-title">Engine Real-Time Verification Diagnostics</div>
+      <div class="grid-2">
+        <div>
+          <span style="font-size:0.7rem; color:var(--text-muted);">CALCULATED METRIC AGE:</span>
+          <div id="hudAge" class="hud-value">0 Years Old</div>
+        </div>
+        <div>
+          <span style="font-size:0.7rem; color:var(--text-muted);">COMPLIANCE VERDICT:</span>
+          <div id="hudVerdict" class="hud-value">AWAITING CALCULATION</div>
+        </div>
+      </div>
+      <div style="margin-top: 8px;">
+        <span style="font-size:0.7rem; color:var(--text-muted);">GENERATED CRYPTOGRAPHIC BIOMETRIC SIGNATURE:</span>
+        <div id="hudBiometric" style="font-family:monospace; font-size:0.8rem; color:var(--accent-cyan); margin-top:2px;">BIOX-AWAITING-SEED</div>
+      </div>
+    </div>
 
-        let localizedIsolatedDatabases = {
-            "Rukiga District Pool Network": [],
-            "Kampala Central Core Node": []
-        };
+    <button class="btn-primary" onclick="commitProfileToCloud()">Stream Roster Block to Shared Cloud Matrix</button>
+  </div>
 
-        let centralizedGlobalRepository = [
-            {
-                uid: "ATH-901248",
-                name: "ASIMWE DERICK",
-                school: "Rukiga High Command Academy",
-                district: "Rukiga",
-                dob: "2009-02-12",
-                division: "Under-15",
-                tier: "Tier-2 (Regional)",
-                avatar: "👤",
-                docHash: "SHA256-49A1F2C9",
-                ageCalculated: 17,
-                biometricHash: "BIO-SIG-8490",
-                status: "FLAGGED",
-                domainNode: "Rukiga District Pool Network",
-                lineups: ["Starter", "Starter", "Substitute", "Starter"]
-            },
-            {
-                uid: "ATH-109483",
-                name: "AMANYA JOAN",
-                school: "Muhanga Progress Base",
-                district: "Rukiga",
-                dob: "1988-11-20",
-                division: "Under-19",
-                tier: "Tier-1 (Elite)",
-                avatar: "👤",
-                docHash: "SHA256-00B7E112",
-                ageCalculated: 37,
-                biometricHash: "BIO-SIG-3029",
-                status: "FLAGGED",
-                domainNode: "Rukiga District Pool Network",
-                lineups: ["Substitute", "Substitute", "Starter", "Substitute"]
-            }
-        ];
+  <div id="ledger" class="tab-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 style="margin:0; color:var(--accent-cyan); font-size:1.1rem;">My Regional Ingested Cache</h3>
+      <span style="font-size:0.75rem; color:var(--text-muted);">Live filtering for records matching your inputs</span>
+    </div>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Biometric Sig</th>
+            <th>Name</th>
+            <th>Gen</th>
+            <th>District / School</th>
+            <th>Age/Tier</th>
+            <th>Lineup</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerTableBody">
+          </tbody>
+      </table>
+    </div>
+  </div>
 
-        // Core Audio Core Trigger APIs
-        function playSuccessAlarm() {
-            const snd = document.getElementById("successAlarmSound");
-            snd.volume = 0.4;
-            snd.currentTime = 0;
-            snd.play().catch(e => console.log("Audio waiting for core tap context"));
+  <div id="terminal" class="tab-content">
+    <div class="form-group">
+      <label>Select Pitch-Side Target Candidate (All Synced Schools)</label>
+      <select id="terminalSelect" onchange="loadTerminalCandidate()">
+        <option value="">-- Choose Roster Block for Field Screening --</option>
+      </select>
+    </div>
+
+    <div class="hud-panel" style="margin-bottom: 15px;">
+      <div class="hud-title">Console Live Evaluation Diagnostic Streams</div>
+      <div id="terminalCandidateData" style="font-size: 0.8rem; line-height: 1.4; font-family: monospace;">
+        [SYSTEM READY]: Select active biometric candidate profile from dropdown menu context...
+      </div>
+    </div>
+
+    <div id="biometricSensor" class="sensor-box" onclick="triggerBiometricScan()">
+      <div id="sensorIcon" style="font-size:2rem; margin-bottom:5px;">🧬</div>
+      <div id="sensorText" style="font-weight:bold; letter-spacing:1px; color:var(--text-muted);">TERMINAL SENSOR DISCONNECTED</div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom: 15px;">
+      <button onclick="manualOverride('FLAGGED')" style="background:#3b111a; border:1px solid var(--status-fail); color:var(--status-fail); padding:8px; font-weight:bold; border-radius:4px; cursor:pointer; font-size:0.75rem;">🚨 Manual Flag Reject</button>
+      <button onclick="manualOverride('VERIFIED')" style="background:#093022; border:1px solid var(--status-pass); color:var(--status-pass); padding:8px; font-weight:bold; border-radius:4px; cursor:pointer; font-size:0.75rem;">✅ Core Pass Authenticate</button>
+    </div>
+
+    <div class="terminal-log" id="terminalLogs">
+      [00:00:00] INITIALIZING CLOUD TERMINAL APPARATUS... Connected to distributed nodes.
+    </div>
+  </div>
+
+  <div id="global" class="tab-content">
+    <h3 style="margin-top:0; color:var(--accent-cyan); font-size:1.1rem; border-bottom:1px solid var(--border-color); padding-bottom:6px;">[04] Shared Live Federation Ledger Form</h3>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:15px;">Real-time unified repository collecting athlete profiles from all schools simultaneously.</p>
+    
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Matrix Block ID</th>
+            <th>Athlete Name</th>
+            <th>Gen</th>
+            <th>District Source</th>
+            <th>School Node</th>
+            <th>Assigned Tier</th>
+            <th>System State</th>
+          </tr>
+        </thead>
+        <tbody id="globalTableBody">
+          </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 📡 CENTRAL PUBLIC DEMO BACKEND CLOUD DATABASE PROVISIONED BY TAMBUKA
+    // =========================================================================
+    const firebaseConfig = {
+      databaseURL: "https://tambuka-technologies-sports-default-rtdb.firebaseio.com/"
+    };
+    
+    // Safety check to handle sandboxed runtime spaces safely
+    if (firebase.apps.length === 0) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    
+    const cloudMatrixRef = firebase.database().ref("sports_national_ledger");
+
+    // Local Runtime Mirror Object Array
+    let runtimeCloudCache = [];
+    let activeTerminalCandidate = null;
+    let uniquelyEnteredRecords = [];
+
+    // Initialize System and Hook Real-time WebSocket Listeners
+    window.addEventListener('DOMContentLoaded', () => {
+      setNetworkIndicator("⏳ INTERFACE RECONCILING WITH CLOUD...", "var(--status-warn)");
+      
+      // Live listener fires instantly whenever any school writes, deletes, or changes data
+      cloudMatrixRef.on('value', (snapshot) => {
+        const rawPayload = snapshot.val();
+        runtimeCloudCache = [];
+        
+        if (rawPayload) {
+          for (let uniqueHashID in rawPayload) {
+            runtimeCloudCache.push(rawPayload[uniqueHashID]);
+          }
         }
+        
+        setNetworkIndicator("● CLOUD MATRIX CONNECTED (LIVE)", "var(--status-pass)");
+        
+        // Auto-refresh the current view tab instantly to ensure data parity
+        const activeTab = document.querySelector('.tab-btn.active').getAttribute('onclick').match(/'([^']+)'/)[1];
+        refreshActiveTabUI(activeTab);
+      }, (error) => {
+        setNetworkIndicator("🚨 SYSTEM SYNC DISRUPTED", "var(--status-fail)");
+        console.error("Firebase Core Read Error Blocked:", error);
+      });
+    });
 
-        function playDangerAlarm() {
-            const snd = document.getElementById("dangerAlarmSound");
-            snd.volume = 0.7;
-            snd.currentTime = 0;
-            snd.play().catch(e => console.log("Audio waiting for core tap context"));
+    function setNetworkIndicator(text, color) {
+      const ind = document.getElementById('syncIndicator');
+      ind.innerText = text;
+      ind.style.color = color;
+    }
+
+    // Tab Router Switcher Layout Map
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+      
+      refreshActiveTabUI(tabId);
+    }
+
+    function refreshActiveTabUI(tabId) {
+      if(tabId === 'ledger') renderLocalLedger();
+      if(tabId === 'terminal') populateTerminalDropdown();
+      if(tabId === 'global') renderGlobalMatrixTable();
+    }
+
+    // Cryptographic Biometric Hash Engine Simulation
+    function calculateBiometricSignature(name, birthYear, gender) {
+      if(!name) return "BIOX-AWAITING-SEED";
+      let seed = `${name.trim().toUpperCase()}_${gender.toUpperCase()}_${birthYear}`;
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+        hash |= 0;
+      }
+      return `BIOX-${Math.abs(hash).toString(16).toUpperCase().padStart(8, '0')}-${birthYear}`;
+    }
+
+    // Live Evaluation Age Auditing Rule Array
+    function runAgeAudit() {
+      const dobInput = document.getElementById('athleteDOB').value;
+      const tier = document.getElementById('athleteDivision').value;
+      
+      if (!dobInput) return { age: 0, passed: true, status: "AWAITING DATA" };
+      
+      const birthYear = new Date(dobInput).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - birthYear;
+      
+      let ceiling = 19;
+      if (tier === "U15") ceiling = 15;
+      if (tier === "U17") ceiling = 17;
+      
+      const passed = age <= ceiling;
+      return {
+        age: age,
+        passed: passed,
+        status: passed ? "ELIGIBLE PASS" : "FLAGGED: OVER-AGE"
+      };
+    }
+
+    // Live Form Dynamic Text Tracking HUD Loop
+    function updateIngestionHUD() {
+      const name = document.getElementById('athleteName').value;
+      const dobInput = document.getElementById('athleteDOB').value;
+      const gender = document.querySelector('input[name="athleteGender"]:checked').value;
+      const birthYear = dobInput ? new Date(dobInput).getFullYear() : 2026;
+      
+      const audit = runAgeAudit();
+      
+      const ageEl = document.getElementById('hudAge');
+      const verdictEl = document.getElementById('hudVerdict');
+      const bioEl = document.getElementById('hudBiometric');
+      
+      ageEl.innerText = dobInput ? `${audit.age} Years Old` : "0 Years Old";
+      verdictEl.innerText = audit.status;
+      
+      if(audit.passed) {
+        verdictEl.className = "hud-value";
+        ageEl.className = "hud-value";
+      } else {
+        verdictEl.className = "hud-value flagged";
+        ageEl.className = "hud-value flagged";
+      }
+      
+      bioEl.innerText = calculateBiometricSignature(name, birthYear, gender);
+    }
+
+    // 🚀 MULTI-TENANT PERSISTENCE: Write profile record to shared central cluster endpoint
+    function commitProfileToCloud() {
+      const name = document.getElementById('athleteName').value;
+      const district = document.getElementById('athleteDistrict').value;
+      const school = document.getElementById('athleteSchool').value;
+      const dob = document.getElementById('athleteDOB').value;
+      const tier = document.getElementById('athleteDivision').value;
+      const gender = document.querySelector('input[name="athleteGender"]:checked').value;
+      const lineup = document.getElementById('athleteLineup').value;
+      
+      if(!name || !district || !school || !dob) {
+        alert("CRITICAL INGESTION LEAK: Ensure all identity mapping fields are populated!");
+        return;
+      }
+      
+      const audit = runAgeAudit();
+      const birthYear = new Date(dob).getFullYear();
+      const bioId = calculateBiometricSignature(name, birthYear, gender);
+      
+      const targetPayload = {
+        id: bioId,
+        name: name.toUpperCase(),
+        gender: gender,
+        district: district,
+        school: school,
+        tier: tier,
+        lineup: lineup,
+        state: audit.passed ? "PENDING" : "FLAGGED",
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      };
+      
+      setNetworkIndicator("📤 STREAMING PACKET BLOCK...", "var(--status-warn)");
+      
+      // Save directly to global registry tree accessible by all devices simultaneously
+      cloudMatrixRef.child(bioId).set(targetPayload)
+        .then(() => {
+          // Record local ownership mapping key index for local tracking filters
+          if (!uniquelyEnteredRecords.includes(bioId)) {
+            uniquelyEnteredRecords.push(bioId);
+          }
+          alert(`CLOUD CONVERGENCE RECONCILED:\nProfile block for ${targetPayload.name} broadcasted successfully to centralized national nodes.`);
+          
+          document.getElementById('athleteName').value = '';
+          document.getElementById('athleteDOB').value = '';
+          updateIngestionHUD();
+        })
+        .catch(err => {
+          alert("DATABASE WRITE ACCESS DENIED: Ensure you have internet routing lanes open.");
+          console.error(err);
+        });
+    }
+
+    // Render Tab 2 Ledger (Filters out records targeted explicitly by this operator node session)
+    function renderLocalLedger() {
+      const tbody = document.getElementById('ledgerTableBody');
+      tbody.innerHTML = '';
+      
+      const myLocalEntries = runtimeCloudCache.filter(item => uniquelyEnteredRecords.includes(item.id));
+      
+      if(myLocalEntries.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No entries recorded from this session yet. Upload a profile to watch live stream pipeline processing.</td></tr>`;
+        return;
+      }
+      
+      myLocalEntries.forEach(p => {
+        let stateBadge = `<span class="badge badge-pending">PENDING</span>`;
+        if(p.state === 'VERIFIED') stateBadge = `<span class="badge badge-pass">VERIFIED</span>`;
+        if(p.state === 'FLAGGED') stateBadge = `<span class="badge badge-fail">FLAGGED</span>`;
+        
+        const genderBadge = p.gender === 'Male' ? `<span class="badge badge-gender-m">M</span>` : `<span class="badge badge-gender-f">F</span>`;
+        
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-family:monospace; color:var(--accent-cyan);">${p.id.substring(0,13)}...</td>
+            <td style="font-weight:bold;">${p.name}</td>
+            <td>${genderBadge}</td>
+            <td><span style="color:#fff;">${p.district}</span><br><span style="font-size:0.75rem; color:var(--text-muted);">${p.school}</span></td>
+            <td><span class="badge" style="background:#1e2d4a; color:#fff;">${p.tier}</span></td>
+            <td>${p.lineup}</td>
+            <td>${stateBadge}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // Populate drop down menus mapping entire remote cloud snapshot datasets 
+    function populateTerminalDropdown() {
+      const select = document.getElementById('terminalSelect');
+      const currentSelectedValue = select.value;
+      
+      select.innerHTML = '<option value="">-- Choose Roster Block for Field Screening --</option>';
+      
+      runtimeCloudCache.forEach(p => {
+        select.innerHTML += `<option value="${p.id}">${p.name} (${p.gender.toUpperCase()} - ${p.tier} - ${p.school})</option>`;
+      });
+      
+      if(currentSelectedValue) {
+        select.value = currentSelectedValue;
+      }
+      
+      loadTerminalCandidate();
+    }
+
+    // Sync Terminal engine with chosen identity hash state fields
+    function loadTerminalCandidate() {
+      const id = document.getElementById('terminalSelect').value;
+      activeTerminalCandidate = runtimeCloudCache.find(p => p.id === id) || null;
+      
+      const displayPanel = document.getElementById('terminalCandidateData');
+      
+      if(!activeTerminalCandidate) {
+        displayPanel.innerHTML = `[SYSTEM READY]: Select active biometric candidate profile from dropdown menu context...`;
+        resetSensorUI();
+        return;
+      }
+      
+      displayPanel.innerHTML = `
+        ID CORRELATION BLOCK : ${activeTerminalCandidate.id}<br>
+        LEGAL FIELD IDENTITY : ${activeTerminalCandidate.name}<br>
+        BIOLOGICAL GENDER    : ${activeTerminalCandidate.gender.toUpperCase()}<br>
+        ORIGIN SOURCE        : ${activeTerminalCandidate.district.toUpperCase()} | ${activeTerminalCandidate.school.toUpperCase()}<br>
+        TOURNAMENT DIVISION  : ${activeTerminalCandidate.tier} CLASSIFICATION LEVEL<br>
+        CURRENT CLOUD STATE  : <span style="color:var(--accent-cyan); font-weight:bold;">${activeTerminalCandidate.state}</span>
+      `;
+      
+      resetSensorUI();
+    }
+
+    function resetSensorUI() {
+      const sensor = document.getElementById('biometricSensor');
+      const text = document.getElementById('sensorText');
+      sensor.className = "sensor-box";
+      
+      if(activeTerminalCandidate) {
+        if(activeTerminalCandidate.state === 'VERIFIED') {
+          sensor.className = "sensor-box passed";
+          text.innerText = "✅ IDENTITY VERIFIED - ELIGIBLE MATCH";
+          text.style.color = "var(--status-pass)";
+        } else if(activeTerminalCandidate.state === 'FLAGGED') {
+          sensor.className = "sensor-box failed";
+          text.innerText = "🚨 THREAT DETECTED: AGE CRITERIA VIOLATION";
+          text.style.color = "var(--status-fail)";
+        } else {
+          text.innerText = "🧬 TOUCH TO INITIATE REMOTE BIOMETRIC SCAN MATCH";
+          text.style.color = "var(--text-muted)";
         }
+      } else {
+        text.innerText = "TERMINAL SENSOR DISCONNECTED";
+        text.style.color = "var(--text-muted)";
+      }
+    }
 
-        function initializeHandshakeSync() {
-            const seed = document.getElementById('passkeyInputToken').value.trim();
-            if (DOMAIN_TENANT_SCHEMAS[seed]) {
-                activeWorkspaceContext = { key: seed, name: DOMAIN_TENANT_SCHEMAS[seed] };
-                document.getElementById('gatekeeperPanel').style.display = 'none';
-                document.getElementById('mainDashboardCore').style.display = 'block';
-                document.getElementById('activeDomainTag').innerHTML = `📡 CONNECTED CHANNELS: <span style="color:#fff;">${activeWorkspaceContext.name.toUpperCase()}</span>`;
-                
-                playSuccessAlarm();
-                
-                handleDynamicAgeCalculation();
-                populateLocalLedgerGrid();
-                rebuildFieldTerminalTargetDropdowns();
-                refreshGlobalMatrixTableRows();
-            } else {
-                playDangerAlarm();
-                alert("❌ CRYPTOGRAPHIC ERROR:\n\nInvalid infrastructure authentication token provided. Terminal session isolated.");
-            }
+    // Execute Cloud State Changes upon biometric touch simulations
+    function triggerBiometricScan() {
+      if(!activeTerminalCandidate) {
+        alert("INTERFACE ERROR: Select an identity vector block first!");
+        return;
+      }
+      
+      const sensor = document.getElementById('biometricSensor');
+      const text = document.getElementById('sensorText');
+      
+      sensor.className = "sensor-box scanning";
+      text.innerText = "COMPARING LOCAL FACIAL PROFILE MATRIX WITH CENTRAL CLOUD SIGNATURES...";
+      text.style.color = "var(--accent-cyan)";
+      logTerminalAction(`Running cloud database comparison sequence on: ${activeTerminalCandidate.name}`);
+      
+      setTimeout(() => {
+        // Evaluate dynamic age boundaries on the fly
+        const birthYear = parseInt(activeTerminalCandidate.id.split('-')[2]);
+        const calculatedAge = 2026 - birthYear;
+        
+        let targetDivisionCeiling = 19;
+        if(activeTerminalCandidate.tier === 'U15') targetDivisionCeiling = 15;
+        if(activeTerminalCandidate.tier === 'U17') targetDivisionCeiling = 17;
+        
+        let finalStateOutput = "VERIFIED";
+        if(calculatedAge > targetDivisionCeiling) {
+          finalStateOutput = "FLAGGED";
         }
+        
+        // Push state evaluation directly back up to cloud server database path
+        cloudMatrixRef.child(activeTerminalCandidate.id).child('state').set(finalStateOutput)
+          .then(() => {
+            logTerminalAction(`Cloud database synchronized state update successfully processed for node ID [${activeTerminalCandidate.id.substring(0,8)}]`);
+          });
+      }, 1200);
+    }
 
-        function handleDynamicAgeCalculation() {
-            const targetDiv = document.getElementById('formDivision').value;
-            document.getElementById('hudDivisionTag').textContent = targetDiv.toUpperCase() + " BOUNDS";
-        }
+    // Executive Overrides (Pushes modifications directly upstream to network clusters)
+    function manualOverride(forcedState) {
+      if(!activeTerminalCandidate) {
+        alert("CRITICAL EXCLUSION: Choose terminal vector before forcing parameter variables!");
+        return;
+      }
+      
+      setNetworkIndicator("📤 TRANSMITTING ADMIN COMMAND OVERRIDE...", "var(--status-warn)");
+      cloudMatrixRef.child(activeTerminalCandidate.id).child('state').set(forcedState)
+        .then(() => {
+          logTerminalAction(`[EXECUTIVE ADMIN OVERRIDE]: State parameter manually pushed to -> ${forcedState}`);
+        });
+    }
 
-        function extractDataURLBuffer(input) {
-            if (input.files && input.files[0]) {
-                activeFileHashSignature = "SHA256-" + Math.random().toString(16).substring(2, 10).toUpperCase() + "E9";
-                document.getElementById('hudHashDisplay').textContent = activeFileHashSignature;
+    function logTerminalAction(msg) {
+      const logBox = document.getElementById('terminalLogs');
+      const time = new Date().toLocaleTimeString();
+      logBox.innerHTML = `[${time}] ${msg}<br>` + logBox.innerHTML;
+    }
 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    runningImageStream64 = e.target.result;
-                    document.getElementById('hudImageContainer').innerHTML = `<img src="${e.target.result}">`;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function captureMasterRegistrationPrint() {
-            storedRosterFingerprint = "BIO-SIG-" + Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('hardwareHashValue').textContent = `CAPTURED // HASH: ${storedRosterFingerprint}`;
-            document.getElementById('hardwareLedStatus').style.color = 'var(--neon-green)';
-            playSuccessAlarm();
-        }
-
-        function switchModuleView(moduleId, element) {
-            document.querySelectorAll('.command-module').forEach(m => m.classList.remove('module-active'));
-            document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active-node'));
-            
-            document.getElementById(moduleId).classList.add('module-active');
-            element.classList.add('active-node');
-        }
-
-        function commitProfileNode() {
-            if (!storedRosterFingerprint) {
-                playDangerAlarm();
-                alert("❌ INCOMPLETE SCHEMAS:\nYou must record a biometric master print matrix track before node entry.");
-                return;
-            }
-
-            const name = document.getElementById('formName').value.toUpperCase().trim();
-            const school = document.getElementById('formSchool').value.trim();
-            const district = document.getElementById('formDistrict').value.toUpperCase().trim();
-            const dob = document.getElementById('formDOB').value;
-            const division = document.getElementById('formDivision').value;
-            const tier = document.getElementById('formTier').value;
-
-            const birthYear = new Date(dob).getFullYear();
-            const evaluationYear = 2026; 
-            const calculatedAge = evaluationYear - birthYear;
-            const limit = DIVISION_LIMITS[division];
-
-            let evalStatus = "VERIFIED";
-            if (calculatedAge > limit) {
-                evalStatus = "FLAGGED";
-            }
-
-            const newAthleteNode = {
-                uid: "ATH-" + Math.floor(100000 + Math.random() * 900000),
-                name: name,
-                school: school,
-                district: district,
-                dob: dob,
-                division: division,
-                tier: tier,
-                avatar: runningImageStream64,
-                docHash: activeFileHashSignature,
-                ageCalculated: calculatedAge,
-                biometricHash: storedRosterFingerprint,
-                status: evalStatus,
-                domainNode: activeWorkspaceContext.name,
-                lineups: [
-                    document.getElementById('m1').value,
-                    document.getElementById('m2').value,
-                    document.getElementById('m3').value,
-                    document.getElementById('m4').value
-                ]
-            };
-
-            if (evalStatus === "FLAGGED") {
-                playDangerAlarm();
-            } else {
-                playSuccessAlarm();
-            }
-
-            localizedIsolatedDatabases[activeWorkspaceContext.name].push(newAthleteNode);
-            
-            document.getElementById('ingestionFormGroup').reset();
-            document.getElementById('hudNameMirror').textContent = "AWAITING SEED";
-            document.getElementById('hardwareHashValue').textContent = "Awaiting capture key trigger...";
-            document.getElementById('hardwareLedStatus').style.color = 'var(--alert-red)';
-            document.getElementById('hudImageContainer').innerHTML = "<span>👤</span><div class='scan-overlay-line'></div>";
-            document.getElementById('hudHashDisplay').textContent = "EMPTY_STREAM_BUFFER";
-            storedRosterFingerprint = "";
-            runningImageStream64 = "👤";
-
-            populateLocalLedgerGrid();
-            rebuildFieldTerminalTargetDropdowns();
-        }
-
-        function populateLocalLedgerGrid() {
-            const container = document.getElementById('districtRosterOutputGrid');
-            container.innerHTML = "";
-            
-            const currentRecords = localizedIsolatedDatabases[activeWorkspaceContext.name];
-            if (currentRecords.length === 0) {
-                container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:var(--text-dark); padding:30px; font-size:0.9rem;">No local nodes stored inside this isolated workspace.</div>`;
-                return;
-            }
-
-            currentRecords.forEach(node => {
-                const card = document.createElement('div');
-                card.className = "grid-data-node";
-                
-                let avatarContent = node.avatar.startsWith('data:') ? `<img src="${node.avatar}" style="width:100%; height:100%; object-fit:cover;">` : `<span>👤</span>`;
-                let badgeClass = node.status === 'VERIFIED' ? 'badge-passed' : 'badge-failed';
-
-                card.innerHTML = `
-                    <div class="hud-avatar-frame" style="width:65px; height:65px; margin:0; flex-shrink:0;">${avatarContent}</div>
-                    <div style="flex-grow:1; min-width:0;">
-                        <h4 style="font-size:0.9rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${node.name}</h4>
-                        <p style="font-size:0.75rem; color:var(--text-dark); margin:2px 0;">${node.school} (${node.district})</p>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-                            <span style="font-size:0.75rem; color:var(--neon-cyan); font-weight:bold;">AGE: ${node.ageCalculated} (${node.division})</span>
-                            <span class="cyber-badge ${badgeClass}">${node.status}</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function rebuildFieldTerminalTargetDropdowns() {
-            const dropdown = document.getElementById('fieldTargetSelect');
-            dropdown.innerHTML = "<option value=''>-- SELECT LOCAL TARGET ATHLETE MEMORY BLOCK --</option>";
-            
-            const currentRecords = localizedIsolatedDatabases[activeWorkspaceContext.name];
-            currentRecords.forEach((node, index) => {
-                dropdown.innerHTML += `<option value="${index}">${node.uid} // ${node.name}</option>`;
-            });
-        }
-
-        let currentlyLoadedTargetNodeIndex = null;
-
-        function loadTargetIntoTerminalConsole() {
-            const indexVal = document.getElementById('fieldTargetSelect').value;
-            const logBox = document.getElementById('terminalLiveLog');
-            
-            if (indexVal === "") {
-                currentlyLoadedTargetNodeIndex = null;
-                logBox.innerHTML = "Awaiting verification hardware selection framework. Terminal core idling...";
-                document.getElementById('fieldScannerLabel').textContent = "TERMINAL SENSOR DISCONNECTED";
-                document.getElementById('fieldScannerGraphic').className = "fingerprint-glyph-icon";
-                return;
-            }
-
-            currentlyLoadedTargetNodeIndex = parseInt(indexVal);
-            const target = localizedIsolatedDatabases[activeWorkspaceContext.name][currentlyLoadedTargetNodeIndex];
-            
-            logBox.innerHTML = `> INITIALIZING TELEMETRY STREAM FOR RECORD [${target.uid}]...\n`;
-            logBox.innerHTML += `> LOCAL CORRELATION NAME: ${target.name}\n`;
-            logBox.innerHTML += `> DISTRICT ASSIGNED: ${target.district}\n`;
-            logBox.innerHTML += `> CLAIMED STRUCTURAL DOB: ${target.dob}\n`;
-            logBox.innerHTML += `> DESIGNATED COMPETITION DIV: ${target.division}\n`;
-            logBox.innerHTML += `> LOCAL HARDWARE EVALUATION VERDICT: ${target.status}\n`;
-            logBox.innerHTML += `> TERMINAL HUB READY FOR LIVE HARDWARE HANDSHAKE FEED...`;
-            
-            document.getElementById('fieldScannerLabel').textContent = "READY FOR SCAN INPUT";
-            document.getElementById('fieldScannerGraphic').className = "fingerprint-glyph-icon";
-        }
-
-        function fireFieldHardwareMatchCheckSequence() {
-            if (currentlyLoadedTargetNodeIndex === null) {
-                playDangerAlarm();
-                alert("❌ HARDWARE ROUTING ERROR:\nYou must first select a target profile record to evaluate inside memory banks.");
-                return;
-            }
-
-            const target = localizedIsolatedDatabases[activeWorkspaceContext.name][currentlyLoadedTargetNodeIndex];
-            const logBox = document.getElementById('terminalLiveLog');
-            const scannerGraphic = document.getElementById('fieldScannerGraphic');
-            
-            document.getElementById('fieldScannerLabel').textContent = "SCANNING NODE INTERFACE...";
-            scannerGraphic.className = "fingerprint-glyph-icon active-scanning-pulse";
-
-            logBox.innerHTML = `> CONNECTING BIOMETRIC SCANNER HARDWARE SEED PIN...\n`;
-            
-            setTimeout(() => {
-                scannerGraphic.className = "fingerprint-glyph-icon";
-                logBox.innerHTML += `> CAPTURING SCAN PATTERN: ${target.biometricHash}\n`;
-                logBox.innerHTML += `> EVALUATING CALCULATED AGE METRICS: ${target.ageCalculated} YEARS OLD\n`;
-
-                if (target.status === "FLAGGED") {
-                    playDangerAlarm();
-                    document.getElementById('fieldScannerLabel').textContent = "VERIFICATION DISCREPANCY REJECT";
-                    logBox.innerHTML += `>> [ALERT] CRITICAL SYSTEM CONFLICT EVALUATED!\n`;
-                    logBox.innerHTML += `>> VERDICT STATUS: DEVIATION ILLEGAL AGE OR DATA SKEW DETECTED. ACCESS BARRED.`;
-                } else {
-                    playSuccessAlarm();
-                    document.getElementById('fieldScannerLabel').textContent = "MATCH INTEGRITY VERIFIED";
-                    logBox.innerHTML += `>> SUCCESS: DATA PATTERNS COMPLETELY SYNCED WITH REGISTRY.\n`;
-                    logBox.innerHTML += `>> VERDICT STATUS: TARGET CLEARED FOR ACTIVE PITCH PARTICIPATION.`;
-                }
-            }, 1200);
-        }
-
-        function overrideFieldScreeningVerdict(forcedStatus) {
-            if (currentlyLoadedTargetNodeIndex === null) {
-                playDangerAlarm();
-                alert("No profile is currently loaded inside the processing memory registry.");
-                return;
-            }
-
-            const target = localizedIsolatedDatabases[activeWorkspaceContext.name][currentlyLoadedTargetNodeIndex];
-            target.status = forcedStatus;
-            
-            if (forcedStatus === "FLAGGED") {
-                playDangerAlarm();
-            } else {
-                playSuccessAlarm();
-            }
-
-            document.getElementById('terminalLiveLog').innerHTML += `\n\n>> [MANUAL OVERRIDE ACTION TRIGGERED] -> CHANGED TO ${forcedStatus}`;
-            populateLocalLedgerGrid();
-        }
-
-        function uplinkLocalNodesToCentralDatabase() {
-            const currentLocalPool = localizedIsolatedDatabases[activeWorkspaceContext.name];
-            if (currentLocalPool.length === 0) {
-                playDangerAlarm();
-                alert("❌ PACKET SYNC FAILED:\n\nThere are no locally buffered profile records inside this domain context to upload.");
-                return;
-            }
-
-            currentLocalPool.forEach(localNode => {
-                const duplicateCheck = centralizedGlobalRepository.some(gNode => gNode.uid === localNode.uid);
-                if (!duplicateCheck) {
-                    centralizedGlobalRepository.unshift(localNode);
-                }
-            });
-
-            playSuccessAlarm();
-            alert(`⚡ EDGE PACKET COUPLING SUCCESSFUL:\n\nSuccessfully pushed ${currentLocalPool.length} network objects to the High Federation Master Database Repository.`);
-            
-            localizedIsolatedDatabases[activeWorkspaceContext.name] = [];
-            
-            populateLocalLedgerGrid();
-            rebuildFieldTerminalTargetDropdowns();
-            refreshGlobalMatrixTableRows();
-        }
-
-        function refreshGlobalMatrixTableRows() {
-            const tBody = document.getElementById('globalFederationTableRows');
-            tBody.innerHTML = "";
-
-            centralizedGlobalRepository.forEach(record => {
-                const tr = document.createElement('tr');
-                let badgeStyle = record.status === "VERIFIED" ? "badge-passed" : "badge-failed";
-                
-                tr.innerHTML = `
-                    <td style="font-weight:bold; color:#fff;">${record.uid} <span style="color:var(--text-dark); font-weight:normal; margin-left:8px;">${record.name}</span></td>
-                    <td>${record.school}</td>
-                    <td style="color:var(--neon-cyan); text-transform: uppercase;">${record.district || 'UNKNOWN'}</td>
-                    <td style="color:var(--laser-blue); font-size:0.75rem;">${record.domainNode.toUpperCase()}</td>
-                    <td><strong style="color:#fff;">${record.ageCalculated} Yrs</strong> (Bound Limit: ${record.division})</td>
-                    <td><span class="cyber-badge ${badgeStyle}">${record.status}</span></td>
-                `;
-                tBody.appendChild(tr);
-            });
-        }
-    </script>
+    // Render Tab 4 Consolidated Global Matrix Ledger Row Elements
+    function renderGlobalMatrixTable() {
+      const tbody = document.getElementById('globalTableBody');
+      tbody.innerHTML = '';
+      
+      if(runtimeCloudCache.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Database matrix empty. Awaiting stream packets from endpoint source schools.</td></tr>`;
+        return;
+      }
+      
+      // Sort items down by the time they were entered so new additions stack visibly on top
+      const sortedMatrixList = [...runtimeCloudCache].sort((x, y) => y.timestamp - x.timestamp);
+      
+      sortedMatrixList.forEach(g => {
+        let stateStyle = 'badge-pending';
+        if(g.state === 'VERIFIED') stateStyle = 'badge-pass';
+        if(g.state === 'FLAGGED') stateStyle = 'badge-fail';
+        
+        const genderBadge = g.gender === 'Male' ? `<span class="badge badge-gender-m">M</span>` : `<span class="badge badge-gender-f">F</span>`;
+        
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-family:monospace; color:var(--text-muted); font-size:0.75rem;">${g.id}</td>
+            <td style="font-weight:bold; color:var(--accent-cyan);">${g.name}</td>
+            <td>${genderBadge}</td>
+            <td style="color:#fff; font-weight:500;">${g.district}</td>
+            <td>${g.school}</td>
+            <td><span class="badge" style="background:#111a2e; color:#fff; border:1px solid var(--border-color);">${g.tier}</span></td>
+            <td><span class="badge ${stateStyle}">${g.state}</span></td>
+          </tr>
+        `;
+      });
+    }
+  </script>
 </body>
 </html>
